@@ -3,6 +3,8 @@ import Head from 'next/head'
 import MatchCard from '../components/MatchCard'
 import Flag from '../components/Flag'
 import Bracket from '../components/Bracket'
+import Auth from '../components/Auth'
+import { supabase } from '../lib/supabase'
 import { getTopScorers, getGroupStandings, calcPoints } from '../lib/utils'
 
 export default function Home() {
@@ -11,6 +13,7 @@ export default function Home() {
   const [pronos, setPronos] = useState({})
   const [username, setUsername] = useState(null)
   const [usernameInput, setUsernameInput] = useState('')
+  const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -22,6 +25,12 @@ export default function Home() {
     supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user || null)
     })
+    try {
+      const saved = localStorage.getItem('md26_pronos')
+      if (saved) setPronos(JSON.parse(saved))
+      const name = localStorage.getItem('md26_username')
+      if (name) setUsername(name)
+    } catch {}
     fetchMatches()
     const interval = setInterval(fetchMatches, 120000)
     return () => clearInterval(interval)
@@ -55,10 +64,8 @@ export default function Home() {
   const recentMatches = finishedMatches.slice(-6).reverse()
   const topScorers = getTopScorers(finishedMatches)
   const groupStandings = getGroupStandings(finishedMatches)
-
   const totalGoals = finishedMatches.reduce((acc, m) => acc + m.score.ft[0] + m.score.ft[1], 0)
   const avgGoals = finishedMatches.length ? (totalGoals / finishedMatches.length).toFixed(1) : '—'
-
   const pronoList = Object.entries(pronos)
   const totalPts = pronoList.reduce((acc, [id, p]) => {
     const m = matches.find(m => `${m.team1}-${m.team2}-${m.date}` === id)
@@ -66,13 +73,10 @@ export default function Home() {
     const pts = calcPoints(p, { hs: m.score.ft[0], as: m.score.ft[1] })
     return acc + (pts || 0)
   }, 0)
+
   if (!authChecked) return null
   if (!user) return <Auth onLogin={setUser} />
 
-  return (
-    <>
-      <Head>
-        <title>MatchDay26 — Coupe du Monde 2026</title>
   return (
     <>
       <Head>
@@ -82,7 +86,6 @@ export default function Home() {
         <meta name="theme-color" content="#0d0f14" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
       <div className="app">
         <div className="topbar">
           <div className="topbar-logo">
@@ -94,12 +97,12 @@ export default function Home() {
           </div>
           <div className="live-pill">
             <div className="live-dot" />
-            <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} style={{ marginLeft: 8, padding: '4px 10px', borderRadius: 8, border: '1px solid #1e2330', background: 'transparent', color: '#4a5168', fontSize: 11, cursor: 'pointer' }}>
-              Déconnexion
-            </button>
+            <span className="live-text">LIVE</span>
           </div>
+          <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} style={{ marginLeft: 8, padding: '4px 10px', borderRadius: 8, border: '1px solid #1e2330', background: 'transparent', color: '#4a5168', fontSize: 11, cursor: 'pointer' }}>
+            Déconnexion
+          </button>
         </div>
-
         <nav className="nav">
           {[['matchs','ti-ball-football','Matchs'],['pronos','ti-target','Pronos'],['groupes','ti-layout-grid','Groupes'],['bracket','ti-tournament','Bracket'],['stats','ti-chart-bar','Stats']].map(([key,icon,label]) => (
             <button key={key} className={`nav-btn ${tab===key?'active':''}`} onClick={() => setTab(key)}>
@@ -107,10 +110,7 @@ export default function Home() {
             </button>
           ))}
         </nav>
-
         <div className="content">
-
-          {/* MATCHS */}
           {tab === 'matchs' && (
             <>
               <div className="stat-row">
@@ -118,9 +118,7 @@ export default function Home() {
                 <div className="stat-card"><div className="stat-val">{totalGoals || '—'}</div><div className="stat-lbl">Buts marqués</div></div>
                 <div className="stat-card"><div className="stat-val">{avgGoals}</div><div className="stat-lbl">Buts / match</div></div>
               </div>
-
               {loading && <div className="empty-state"><i className="ti ti-loader" aria-hidden="true" />Chargement...</div>}
-
               {!loading && todayMatches.length > 0 && (
                 <>
                   <div className="section-label"><i className="ti ti-clock" aria-hidden="true" /> À venir</div>
@@ -129,7 +127,6 @@ export default function Home() {
                   ))}
                 </>
               )}
-
               {!loading && recentMatches.length > 0 && (
                 <>
                   <div className="section-label"><i className="ti ti-checks" aria-hidden="true" /> Résultats récents</div>
@@ -138,7 +135,6 @@ export default function Home() {
                   ))}
                 </>
               )}
-
               {topScorers.length > 0 && (
                 <>
                   <div className="section-label"><i className="ti ti-star" aria-hidden="true" /> Top buteurs</div>
@@ -159,8 +155,6 @@ export default function Home() {
               )}
             </>
           )}
-
-          {/* PRONOS */}
           {tab === 'pronos' && (
             <>
               {!username && (
@@ -168,20 +162,11 @@ export default function Home() {
                   <h3>Rejoins le classement</h3>
                   <p>Entre ton pseudo pour suivre tes points</p>
                   <div className="username-input-row">
-                    <input
-                      className="username-input"
-                      type="text"
-                      placeholder="Ton pseudo..."
-                      maxLength={20}
-                      value={usernameInput}
-                      onChange={e => setUsernameInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && joinLeaderboard()}
-                    />
+                    <input className="username-input" type="text" placeholder="Ton pseudo..." maxLength={20} value={usernameInput} onChange={e => setUsernameInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && joinLeaderboard()} />
                     <button className="btn-join" onClick={joinLeaderboard}>Rejoindre</button>
                   </div>
                 </div>
               )}
-
               {username && (
                 <div className="user-summary">
                   <div>
@@ -194,7 +179,6 @@ export default function Home() {
                   </div>
                 </div>
               )}
-
               {!pronoList.length ? (
                 <div className="empty-state">
                   <i className="ti ti-target" aria-hidden="true" />
@@ -236,8 +220,6 @@ export default function Home() {
               )}
             </>
           )}
-
-          {/* GROUPES */}
           {tab === 'groupes' && (
             <>
               {Object.entries(groupStandings).length === 0 ? (
@@ -254,10 +236,7 @@ export default function Home() {
                         {teams.map((t, i) => (
                           <tr key={t.name} className={i < 2 ? 'qualified' : ''}>
                             <td>{i + 1}</td>
-                            <td>
-                              <Flag country={t.name} size="sm" />
-                              {t.name}
-                            </td>
+                            <td><Flag country={t.name} size="sm" />{t.name}</td>
                             <td>{t.p}</td><td>{t.w}</td><td>{t.d}</td><td>{t.l}</td>
                             <td>{t.gf}</td><td>{t.ga}</td>
                             <td style={{fontWeight:600,color:'var(--text)'}}>{t.pts}</td>
@@ -270,8 +249,12 @@ export default function Home() {
               )}
             </>
           )}
-
-          {/* STATS */}
+          {tab === 'bracket' && (
+            <>
+              <div className="section-label"><i className="ti ti-tournament" aria-hidden="true" /> Phases finales</div>
+              <Bracket matches={matches} />
+            </>
+          )}
           {tab === 'stats' && (
             <>
               <div className="stat-row">
@@ -279,7 +262,6 @@ export default function Home() {
                 <div className="stat-card"><div className="stat-val">{totalGoals}</div><div className="stat-lbl">Buts marqués</div></div>
                 <div className="stat-card"><div className="stat-val">{avgGoals}</div><div className="stat-lbl">Buts / match</div></div>
               </div>
-
               {(() => {
                 let hw=0,d=0,aw=0
                 finishedMatches.forEach(m => {
@@ -304,7 +286,6 @@ export default function Home() {
                   </>
                 )
               })()}
-
               {topScorers.length > 0 && (
                 <>
                   <div className="section-label"><i className="ti ti-star" aria-hidden="true" /> Top buteurs</div>
@@ -325,14 +306,6 @@ export default function Home() {
               )}
             </>
           )}
-          {/* BRACKET */}
-          {tab === 'bracket' && (
-            <>
-              <div className="section-label"><i className="ti ti-tournament" aria-hidden="true" /> Phases finales</div>
-              <Bracket matches={matches} />
-            </>
-          )}
-
         </div>
       </div>
     </>
