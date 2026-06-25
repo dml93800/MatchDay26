@@ -1,16 +1,17 @@
 import { useState } from 'react'
 import { getFlagUrl } from '../lib/utils'
+import { useState, useEffect } from 'react'
+const [stadiumImg, setStadiumImg] = useState(null)
 
-const STADIUMS = [
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/MetLife_Stadium_-_New_York_Giants_vs._New_York_Jets_-_20121007.jpg/1280px-MetLife_Stadium_-_New_York_Giants_vs._New_York_Jets_-_20121007.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/SoFi_Stadium_aerial_view_2020.jpg/1280px-SoFi_Stadium_aerial_view_2020.jpg',
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/AT%26T_Stadium_Cowboys_vs_Giants_2013.jpg/1280px-AT%26T_Stadium_Cowboys_vs_Giants_2013.jpg',
-]
-
-function getStadiumImg(team1, team2) {
-  const hash = (team1 + team2).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  return STADIUMS[hash % STADIUMS.length]
-}
+useEffect(() => {
+  const query = match.ground 
+    ? `football stadium ${match.ground}` 
+    : 'football stadium night'
+  fetch(`/api/stadium?query=${encodeURIComponent(query)}`)
+    .then(r => r.json())
+    .then(data => { if (data.url) setStadiumImg(data.url) })
+    .catch(() => {})
+}, [match.ground])
 
 export default function MatchCard({ match, prono, onSaveProno, isHero = false }) {
   const [showProno, setShowProno] = useState(false)
