@@ -13,7 +13,7 @@ useEffect(() => {
   fetch(`/api/stadium?query=${encodeURIComponent(query)}`)
     .then(r => r.json())
     .then(data => { if (data.url) setStadiumImg(data.url) })
-    .catch(() => {})
+    .catch(() => {}) 
 }, [match.ground])
 
 export default function MatchCard({ match, prono, onSaveProno, isHero = false }) {
