@@ -4,17 +4,8 @@ import { getFlagUrl } from '../lib/utils'
 
 
 
-  const [stadiumImg, setStadiumImg] = useState(null)
-
-useEffect(() => {
-  const query = match.ground 
-    ? `football stadium ${match.ground}` 
-    : 'football stadium night'
-  fetch(`/api/stadium?query=${encodeURIComponent(query)}`)
-    .then(r => r.json())
-    .then(data => { if (data.url) setStadiumImg(data.url) })
-    .catch(() => {}) 
-}, [match.ground])
+import { useState, useEffect } from 'react'
+import { getFlagUrl } from '../lib/utils'
 
 export default function MatchCard({ match, prono, onSaveProno, isHero = false }) {
   const [showProno, setShowProno] = useState(false)
@@ -23,6 +14,17 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
   const [analysis, setAnalysis] = useState(null)
   const [loadingAI, setLoadingAI] = useState(false)
   const [showAI, setShowAI] = useState(false)
+  const [stadiumImg, setStadiumImg] = useState(null)
+
+  useEffect(() => {
+    const query = match.ground
+      ? `football stadium ${match.ground}`
+      : 'football stadium night'
+    fetch(`/api/stadium?query=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(data => { if (data.url) setStadiumImg(data.url) })
+      .catch(() => {})
+  }, [match.ground])
 
   const hasScore = !!match.score
   const hs = hasScore ? match.score.ft[0] : null
