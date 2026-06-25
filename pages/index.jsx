@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Head from 'next/head'
 import MatchCard from '../components/MatchCard'
 import Flag from '../components/Flag'
+import Bracket from '../components/Bracket'
 import { getTopScorers, getGroupStandings, calcPoints } from '../lib/utils'
 
 export default function Home() {
@@ -90,7 +91,7 @@ export default function Home() {
         </div>
 
         <nav className="nav">
-          {[['matchs','ti-ball-football','Matchs'],['pronos','ti-target','Pronos'],['groupes','ti-layout-grid','Groupes'],['stats','ti-chart-bar','Stats']].map(([key,icon,label]) => (
+          {[['matchs','ti-ball-football','Matchs'],['pronos','ti-target','Pronos'],['groupes','ti-layout-grid','Groupes'],['bracket','ti-tournament','Bracket'],['stats','ti-chart-bar','Stats']].map(([key,icon,label]) => (
             <button key={key} className={`nav-btn ${tab===key?'active':''}`} onClick={() => setTab(key)}>
               <i className={`ti ${icon}`} aria-hidden="true" /> {label}
             </button>
@@ -312,6 +313,13 @@ export default function Home() {
                   </div>
                 </>
               )}
+            </>
+          )}
+          {/* BRACKET */}
+          {tab === 'bracket' && (
+            <>
+              <div className="section-label"><i className="ti ti-tournament" aria-hidden="true" /> Phases finales</div>
+              <Bracket matches={matches} />
             </>
           )}
 
