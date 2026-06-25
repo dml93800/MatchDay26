@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import dynamic from 'next/dynamic'
 import MatchCard from '../components/MatchCard'
 import Flag from '../components/Flag'
 import Bracket from '../components/Bracket'
-import Auth from '../components/Auth'
+const Auth = dynamic(() => import('../components/Auth'), { ssr: false })
 import { supabase } from '../lib/supabase'
 import { getTopScorers, getGroupStandings, calcPoints, getFlagUrl } from '../lib/utils'
 
