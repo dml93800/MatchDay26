@@ -11,15 +11,17 @@ export default function Home() {
   const [pronos, setPronos] = useState({})
   const [username, setUsername] = useState(null)
   const [usernameInput, setUsernameInput] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('md26_pronos')
-      if (saved) setPronos(JSON.parse(saved))
-      const name = localStorage.getItem('md26_username')
-      if (name) setUsername(name)
-    } catch {}
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user || null)
+      setAuthChecked(true)
+    })
+    supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user || null)
+    })
     fetchMatches()
     const interval = setInterval(fetchMatches, 120000)
     return () => clearInterval(interval)
@@ -64,7 +66,13 @@ export default function Home() {
     const pts = calcPoints(p, { hs: m.score.ft[0], as: m.score.ft[1] })
     return acc + (pts || 0)
   }, 0)
+  if (!authChecked) return null
+  if (!user) return <Auth onLogin={setUser} />
 
+  return (
+    <>
+      <Head>
+        <title>MatchDay26 — Coupe du Monde 2026</title>
   return (
     <>
       <Head>
@@ -86,7 +94,9 @@ export default function Home() {
           </div>
           <div className="live-pill">
             <div className="live-dot" />
-            <span className="live-text">LIVE</span>
+            <button onClick={() => supabase.auth.signOut().then(() => setUser(null))} style={{ marginLeft: 8, padding: '4px 10px', borderRadius: 8, border: '1px solid #1e2330', background: 'transparent', color: '#4a5168', fontSize: 11, cursor: 'pointer' }}>
+              Déconnexion
+            </button>
           </div>
         </div>
 
