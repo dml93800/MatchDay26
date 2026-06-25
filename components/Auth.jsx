@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Auth from '../components/Auth'
-import { supabase } from '../lib/supabase'
+
 
 export default function Auth({ onLogin }) {
   const [mode, setMode] = useState('login')
