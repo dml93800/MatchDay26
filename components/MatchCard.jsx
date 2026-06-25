@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react'
 import { getFlagUrl } from '../lib/utils'
 
-
-
-
-import { useState, useEffect } from 'react'
-import { getFlagUrl } from '../lib/utils'
-
 export default function MatchCard({ match, prono, onSaveProno, isHero = false }) {
   const [showProno, setShowProno] = useState(false)
   const [ph, setPh] = useState(0)
   const [pa, setPa] = useState(0)
   const [analysis, setAnalysis] = useState(null)
   const [loadingAI, setLoadingAI] = useState(false)
-  const [showAI, setShowAI] = useState(false)
   const [stadiumImg, setStadiumImg] = useState(null)
 
   useEffect(() => {
@@ -31,28 +24,20 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
   const as_ = hasScore ? match.score.ft[1] : null
   const isUpcoming = !hasScore
   const matchId = `${match.team1}-${match.team2}-${match.date}`
-
   const homeP = isUpcoming ? 42 : (hs > as_ ? 58 : hs === as_ ? 32 : 22)
   const drawP = isUpcoming ? 25 : 20
   const awayP = 100 - homeP - drawP
-
   const flag1 = getFlagUrl(match.team1)
   const flag2 = getFlagUrl(match.team2)
-  const stadiumImg = getStadiumImg(match.team1, match.team2)
 
   async function askAI() {
     setLoadingAI(true)
-    setShowAI(true)
     setAnalysis(null)
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          team1: match.team1, team2: match.team2,
-          score: hasScore ? `${hs}-${as_}` : null,
-          type: isUpcoming ? 'upcoming' : 'finished'
-        })
+        body: JSON.stringify({ team1: match.team1, team2: match.team2, score: hasScore ? `${hs}-${as_}` : null, type: isUpcoming ? 'upcoming' : 'finished' })
       })
       const data = await res.json()
       setAnalysis(data.analysis || 'Analyse indisponible.')
@@ -69,12 +54,13 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
     return (
       <>
         <div className="hero">
-          <img className="hero-img" src={stadiumImg} alt="Stade" />
+          {stadiumImg
+            ? <img className="hero-img" src={stadiumImg} alt="Stade" />
+            : <div style={{width:'100%',height:'100%',background:'#0d0f1a'}} />
+          }
           <div className="hero-overlay" />
           <div className="hero-content">
-            <div className="hero-meta">
-              {match.group || match.round} · {match.ground}
-            </div>
+            <div className="hero-meta">{match.group || match.round} · {match.ground}</div>
             <div className="hero-teams">
               <div className="hero-team">
                 {flag1 && <img className="hero-flag" src={flag1} alt={match.team1} />}
@@ -116,10 +102,7 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
             {loadingAI ? 'Analyse...' : 'Analyse IA'}
           </button>
           {isUpcoming && (
-            <button
-              className={`action-btn green ${prono ? 'done' : ''}`}
-              onClick={() => !prono && setShowProno(v => !v)}
-            >
+            <button className={`action-btn green ${prono ? 'done' : ''}`} onClick={() => !prono && setShowProno(v => !v)}>
               <i className="ti ti-target" aria-hidden="true" />
               {prono ? `${prono.hs}-${prono.as}` : 'Mon prono'}
             </button>
