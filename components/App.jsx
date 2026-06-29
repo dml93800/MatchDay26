@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import MatchCard from './MatchCard'
 import Bracket from './Bracket'
 import Auth from './Auth'
@@ -15,6 +14,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [leaderboard, setLeaderboard] = useState([])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -31,6 +31,7 @@ export default function App() {
       if (name) setUsername(name)
     } catch {}
     fetchMatches()
+    fetchLeaderboard()
     const interval = setInterval(fetchMatches, 120000)
     return () => clearInterval(interval)
   }, [])
@@ -44,10 +45,42 @@ export default function App() {
     setLoading(false)
   }
 
-  function saveProno(id, t1, t2, hs, as_) {
+  async function fetchLeaderboard() {
+    try {
+      const res = await fetch('/api/pronos')
+      const data = await res.json()
+      const allPronos = data.pronos || []
+      const scores = {}
+      allPronos.forEach(p => {
+        const uid = p.user_id
+        const uname = p.profiles?.username || 'Anonyme'
+        if (!scores[uid]) scores[uid] = { username: uname, pts: 0, count: 0 }
+        scores[uid].count++
+      })
+      const sorted = Object.values(scores).sort((a, b) => b.pts - a.pts)
+      setLeaderboard(sorted)
+    } catch {}
+  }
+
+  async function saveProno(id, t1, t2, hs, as_) {
     const updated = { ...pronos, [id]: { hs, as: as_, team1: t1, team2: t2, time: Date.now() } }
     setPronos(updated)
     try { localStorage.setItem('md26_pronos', JSON.stringify(updated)) } catch {}
+    try {
+      await fetch('/api/pronos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: user.id,
+          match_id: id,
+          team1: t1,
+          team2: t2,
+          score_home: parseInt(hs),
+          score_away: parseInt(as_)
+        })
+      })
+      fetchLeaderboard()
+    } catch {}
   }
 
   function joinLeaderboard() {
@@ -194,17 +227,26 @@ export default function App() {
                   </div>
                 )
               })}
-              <div style={{margin:'16px 16px 0'}}><div className="section-header"><span className="section-title">Classement</span></div></div>
-              <div className="leaderboard-card">
-                <div className="lb-row">
-                  <span className="lb-pos">1</span>
-                  <span className="lb-name">{username||'Toi'}</span>
-                  <span className="lb-detail">{pronoList.length} prono{pronoList.length>1?'s':''}</span>
-                  <span className="lb-pts">{totalPts} pts</span>
-                </div>
-              </div>
             </>
           )}
+          <div style={{margin:'16px 16px 0'}}><div className="section-header"><span className="section-title">🏆 Classement général</span></div></div>
+          <div className="leaderboard-card">
+            {leaderboard.length > 0 ? leaderboard.map((u, i) => (
+              <div className="lb-row" key={i}>
+                <span className="lb-pos" style={{color:i===0?'var(--gold)':i===1?'#9ba8b8':i===2?'#cd7f32':'var(--text3)'}}>{i+1}</span>
+                <span className="lb-name">{u.username}</span>
+                <span className="lb-detail">{u.count} prono{u.count>1?'s':''}</span>
+                <span className="lb-pts">{u.pts} pts</span>
+              </div>
+            )) : (
+              <div className="lb-row">
+                <span className="lb-pos">1</span>
+                <span className="lb-name">{username||'Toi'}</span>
+                <span className="lb-detail">{pronoList.length} prono{pronoList.length>1?'s':''}</span>
+                <span className="lb-pts">{totalPts} pts</span>
+              </div>
+            )}
+          </div>
         </>
       )}
 
