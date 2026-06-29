@@ -1,3 +1,4 @@
+import MatchDetail from './MatchDetail'
 import { useState, useEffect } from 'react'
 import MatchCard from './MatchCard'
 import Bracket from './Bracket'
@@ -6,6 +7,7 @@ import { supabase } from '../lib/supabase'
 import { getTopScorers, getGroupStandings, calcPoints, getFlagUrl } from '../lib/utils'
 
 export default function App() {
+  const [selectedMatch, setSelectedMatch] = useState(null)
   const [tab, setTab] = useState('home')
   const [matches, setMatches] = useState([])
   const [pronos, setPronos] = useState({})
@@ -71,12 +73,8 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: user.id,
-          match_id: id,
-          team1: t1,
-          team2: t2,
-          score_home: parseInt(hs),
-          score_away: parseInt(as_)
+          user_id: user.id, match_id: id, team1: t1, team2: t2,
+          score_home: parseInt(hs), score_away: parseInt(as_)
         })
       })
       fetchLeaderboard()
@@ -96,7 +94,6 @@ export default function App() {
   const otherUpcoming = upcomingMatches.slice(1, 6)
   const recentMatches = finishedMatches.slice(-5).reverse()
   const topScorers = getTopScorers(finishedMatches)
-  const groupStandings = getGroupStandings(finishedMatches)
   const totalGoals = finishedMatches.reduce((acc, m) => acc + m.score.ft[0] + m.score.ft[1], 0)
   const avgGoals = finishedMatches.length ? (totalGoals / finishedMatches.length).toFixed(1) : '—'
   const pronoList = Object.entries(pronos)
@@ -112,34 +109,28 @@ export default function App() {
 
   return (
     <div className="app">
+      {selectedMatch && <MatchDetail match={selectedMatch} onClose={() => setSelectedMatch(null)} />}
       <div className="topbar">
         <span className="topbar-name">MatchDay26</span>
         <div className="topbar-right">
-          <div className="live-pill">
-            <div className="live-dot" />
-            <span className="live-text">LIVE</span>
-          </div>
-          <button className="btn-deconnect" onClick={() => supabase.auth.signOut().then(() => setUser(null))}>
-            Déco
-          </button>
+          <div className="live-pill"><div className="live-dot" /><span className="live-text">LIVE</span></div>
+          <button className="btn-deconnect" onClick={() => supabase.auth.signOut().then(() => setUser(null))}>Déco</button>
         </div>
       </div>
 
       {tab === 'home' && (
         <>
-          {heroMatch && (
-            <MatchCard match={heroMatch} prono={pronos[`${heroMatch.team1}-${heroMatch.team2}-${heroMatch.date}`]} onSaveProno={saveProno} isHero={true} />
-          )}
+          {heroMatch && <MatchCard match={heroMatch} prono={pronos[`${heroMatch.team1}-${heroMatch.team2}-${heroMatch.date}`]} onSaveProno={saveProno} isHero={true} onSelect={setSelectedMatch} />}
           {otherUpcoming.length > 0 && (
             <div className="section">
               <div className="section-header"><span className="section-title">À venir</span></div>
-              {otherUpcoming.map((m, i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} />)}
+              {otherUpcoming.map((m, i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} onSelect={setSelectedMatch} />)}
             </div>
           )}
           {recentMatches.length > 0 && (
             <div className="section">
               <div className="section-header"><span className="section-title">Résultats récents</span></div>
-              {recentMatches.map((m, i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} />)}
+              {recentMatches.map((m, i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} onSelect={setSelectedMatch} />)}
             </div>
           )}
           {topScorers.length > 0 && (
@@ -172,13 +163,13 @@ export default function App() {
           {upcomingMatches.length > 0 && (
             <div className="section">
               <div className="section-header"><span className="section-title">À venir</span></div>
-              {upcomingMatches.slice(0,10).map((m,i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} />)}
+              {upcomingMatches.slice(0,10).map((m,i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} onSelect={setSelectedMatch} />)}
             </div>
           )}
           {finishedMatches.length > 0 && (
             <div className="section">
               <div className="section-header"><span className="section-title">Résultats</span></div>
-              {finishedMatches.slice().reverse().map((m,i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} />)}
+              {finishedMatches.slice().reverse().map((m,i) => <MatchCard key={i} match={m} prono={pronos[`${m.team1}-${m.team2}-${m.date}`]} onSaveProno={saveProno} onSelect={setSelectedMatch} />)}
             </div>
           )}
         </>

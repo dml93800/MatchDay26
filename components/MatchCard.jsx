@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getFlagUrl, formatMatchTime } from '../lib/utils'
 
-export default function MatchCard({ match, prono, onSaveProno, isHero = false }) {
+export default function MatchCard({ match, prono, onSaveProno, isHero = false, onSelect }) {
   const [showProno, setShowProno] = useState(false)
   const [ph, setPh] = useState(0)
   const [pa, setPa] = useState(0)
@@ -52,10 +52,7 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
     return (
       <>
         <div className="hero">
-          {stadiumImg
-            ? <img className="hero-img" src={stadiumImg} alt="Stade" />
-            : <div style={{width:'100%',height:'100%',background:'#0d0f1a'}} />
-          }
+          {stadiumImg ? <img className="hero-img" src={stadiumImg} alt="Stade" /> : <div style={{width:'100%',height:'100%',background:'#0d0f1a'}} />}
           <div className="hero-overlay" />
           <div className="hero-content">
             <div className="hero-meta">{match.group || match.round} · {match.ground}</div>
@@ -91,27 +88,22 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
 
         <div className="action-row">
           <button className="action-btn" onClick={askAI} disabled={loadingAI}>
-            <i className="ti ti-brain" aria-hidden="true" />
-            {loadingAI ? 'Analyse...' : 'Analyse IA'}
+            <i className="ti ti-brain" aria-hidden="true" />{loadingAI ? 'Analyse...' : 'Analyse IA'}
           </button>
           {isUpcoming && (
             <button className={`action-btn green ${prono ? 'done' : ''}`} onClick={() => !prono && setShowProno(v => !v)}>
-              <i className="ti ti-target" aria-hidden="true" />
-              {prono ? `${prono.hs}-${prono.as}` : 'Mon prono'}
+              <i className="ti ti-target" aria-hidden="true" />{prono ? `${prono.hs}-${prono.as}` : 'Mon prono'}
             </button>
           )}
-          <button className="action-btn">
-            <i className="ti ti-share" aria-hidden="true" />
-            Partager
-          </button>
+          {hasScore && onSelect && (
+            <button className="action-btn" onClick={() => onSelect(match)}>
+              <i className="ti ti-file-text" aria-hidden="true" />Résumé
+            </button>
+          )}
+          <button className="action-btn"><i className="ti ti-share" aria-hidden="true" />Partager</button>
         </div>
 
-        {loadingAI && (
-          <div className="ai-loading">
-            <span className="ai-dot" /><span className="ai-dot" /><span className="ai-dot" />
-            <span>L'IA analyse...</span>
-          </div>
-        )}
+        {loadingAI && <div className="ai-loading"><span className="ai-dot" /><span className="ai-dot" /><span className="ai-dot" /><span>L'IA analyse...</span></div>}
         {analysis && <div className="ai-result">{analysis}</div>}
 
         {showProno && (
@@ -138,7 +130,11 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
   }
 
   return (
-    <div className="match-item">
+    <div
+      className="match-item"
+      onClick={() => hasScore && onSelect && onSelect(match)}
+      style={{ cursor: hasScore ? 'pointer' : 'default' }}
+    >
       <div className="match-item-flags">
         {flag1 ? <img className="match-item-flag" src={flag1} alt={match.team1} /> : <div className="match-item-flag" />}
         {flag2 ? <img className="match-item-flag" src={flag2} alt={match.team2} /> : <div className="match-item-flag" />}
@@ -160,7 +156,7 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false })
         </div>
       </div>
       {isUpcoming && <span className="match-badge mb-soon">À venir</span>}
-      {hasScore && <span className="match-badge mb-fin">Terminé</span>}
+      {hasScore && <span className="match-badge mb-fin" style={{display:'flex',alignItems:'center',gap:4}}>Terminé <i className="ti ti-chevron-right" style={{fontSize:10}} aria-hidden="true"/></span>}
     </div>
   )
 }
