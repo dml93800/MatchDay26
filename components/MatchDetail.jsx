@@ -26,10 +26,18 @@ export default function MatchDetail({ match, onClose }) {
     setLoadingStats(false)
   }
 
-  async function generateAnalysis() {
+async function generateAnalysis() {
     setLoadingAI(true)
     try {
-      const goals = [...(match.goals1||[]).map(g => `${g.name} (${g.minute}' - ${match.team1})`), ...(match.goals2||[]).map(g => `${g.name} (${g.minute}' - ${match.team2})`)]
+      const goals = [
+        ...(match.goals1||[]).filter(g => !g.owngoal).map(g => `${g.name} ${g.penalty?'(pen.)':''} (${g.minute}' - ${match.team1})`),
+        ...(match.goals2||[]).filter(g => !g.owngoal).map(g => `${g.name} ${g.penalty?'(pen.)':''} (${g.minute}' - ${match.team2})`),
+      ].sort((a,b) => {
+        const ma = parseInt(a.match(/\((\d+)'/)?.[1]||0)
+        const mb = parseInt(b.match(/\((\d+)'/)?.[1]||0)
+        return ma - mb
+      }).join(', ')
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,14 +46,16 @@ export default function MatchDetail({ match, onClose }) {
           team2: match.team2,
           score: `${hs}-${as_}`,
           type: 'summary',
-          goals: goals.join(', '),
-          group: match.group,
-          ground: match.ground
+          goals: goals || 'aucun but',
+          group: match.group || match.round || '',
+          ground: match.ground || ''
         })
       })
       const data = await res.json()
-      setAnalysis(data.analysis)
-    } catch {}
+      setAnalysis(data.analysis || 'Analyse indisponible.')
+    } catch(e) {
+      setAnalysis('Erreur de connexion.')
+    }
     setLoadingAI(false)
   }
 
