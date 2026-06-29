@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import MatchCard from './MatchCard'
-import Flag from './Flag'
 import Bracket from './Bracket'
 import Auth from './Auth'
 import { supabase } from '../lib/supabase'
