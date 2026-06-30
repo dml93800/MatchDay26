@@ -5,8 +5,6 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false, o
   const [showProno, setShowProno] = useState(false)
   const [ph, setPh] = useState(0)
   const [pa, setPa] = useState(0)
-  const [analysis, setAnalysis] = useState(null)
-  const [loadingAI, setLoadingAI] = useState(false)
   const [stadiumImg, setStadiumImg] = useState(null)
 
   useEffect(() => {
@@ -27,21 +25,6 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false, o
   const awayP = 100 - homeP - drawP
   const flag1 = getFlagUrl(match.team1)
   const flag2 = getFlagUrl(match.team2)
-
-  async function askAI() {
-    setLoadingAI(true)
-    setAnalysis(null)
-    try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ team1: match.team1, team2: match.team2, score: hasScore ? `${hs}-${as_}` : null, type: isUpcoming ? 'upcoming' : 'finished' })
-      })
-      const data = await res.json()
-      setAnalysis(data.analysis || 'Analyse indisponible.')
-    } catch { setAnalysis('Erreur de connexion.') }
-    setLoadingAI(false)
-  }
 
   function saveProno() {
     onSaveProno(matchId, match.team1, match.team2, ph, pa)
@@ -87,24 +70,23 @@ export default function MatchCard({ match, prono, onSaveProno, isHero = false, o
         </div>
 
         <div className="action-row">
-          <button className="action-btn" onClick={askAI} disabled={loadingAI}>
-            <i className="ti ti-brain" aria-hidden="true" />{loadingAI ? 'Analyse...' : 'Analyse IA'}
-          </button>
           {isUpcoming && (
             <button className={`action-btn green ${prono ? 'done' : ''}`} onClick={() => !prono && setShowProno(v => !v)}>
-              <i className="ti ti-target" aria-hidden="true" />{prono ? `${prono.hs}-${prono.as}` : 'Mon prono'}
+              <i className="ti ti-target" aria-hidden="true" />
+              {prono ? `${prono.hs}-${prono.as}` : 'Mon prono'}
             </button>
           )}
           {hasScore && onSelect && (
             <button className="action-btn" onClick={() => onSelect(match)}>
-              <i className="ti ti-file-text" aria-hidden="true" />Résumé
+              <i className="ti ti-file-text" aria-hidden="true" />
+              Résumé
             </button>
           )}
-          <button className="action-btn"><i className="ti ti-share" aria-hidden="true" />Partager</button>
+          <button className="action-btn">
+            <i className="ti ti-share" aria-hidden="true" />
+            Partager
+          </button>
         </div>
-
-        {loadingAI && <div className="ai-loading"><span className="ai-dot" /><span className="ai-dot" /><span className="ai-dot" /><span>L'IA analyse...</span></div>}
-        {analysis && <div className="ai-result">{analysis}</div>}
 
         {showProno && (
           <div style={{ margin: '0 16px 8px' }}>
